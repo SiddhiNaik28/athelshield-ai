@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AthleShield AI — Football Injury Risk & Training Load Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-mid:#D0EEE4;
+  --red:#C0392B;--red-light:#FDEEEE;--amber:#C97A1A;--amber-light:#FEF3E2;
+  --bg:#F7F6F1;--card:#FFFFFF;--text:#1A1A18;--text2:#5A5A56;--text3:#9A9A94;
+  --border:#E2E0D8;--border2:#CECCC2;
+  --font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:12px;--radius-sm:8px;--radius-lg:16px;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);--shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+
+/* NAV */
+nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:18px;height:18px}
+.nav-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text)}
+.nav-title span{color:var(--green)}
+.nav-badge{font-size:11px;font-weight:500;background:var(--green-light);color:var(--green-dark);padding:3px 9px;border-radius:20px;border:1px solid var(--green-mid)}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0F1E1A 0%,#1A3530 50%,#0D2D25 100%);padding:64px 24px 48px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231D9E75' fill-opacity='0.06'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(29,158,117,0.15);border:1px solid rgba(29,158,117,0.3);color:#6DDBB0;font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;margin-bottom:24px;letter-spacing:0.04em}
+.hero-tag::before{content:'⚽';font-size:13px}
+.hero h1{font-family:var(--font-display);font-size:clamp(32px,6vw,52px);font-weight:800;color:#FFFFFF;line-height:1.1;margin-bottom:16px}
+.hero h1 span{color:#4DCEA0}
+.hero p{font-size:17px;color:rgba(255,255,255,0.65);max-width:520px;margin:0 auto 32px;line-height:1.6}
+.hero-cta{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border-radius:var(--radius-sm);text-decoration:none;transition:all 0.2s;cursor:pointer;border:none}
+.hero-cta:hover{background:#18B882;transform:translateY(-1px);box-shadow:0 4px 20px rgba(29,158,117,0.4)}
+
+/* TABS */
+.tabs-wrap{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;overflow-x:auto}
+.tab-btn{font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--text2);padding:14px 20px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+.tab-btn:hover:not(.active){color:var(--text)}
+
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:28px 16px 60px}
+.pane{display:none}
+.pane.active{display:block}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.stat-value{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.stat-value.red{color:var(--red)}
+.stat-value.green{color:var(--green)}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* ALERTS */
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:13px;line-height:1.5;border-left:3px solid}
+.alert.danger{background:var(--red-light);border-color:var(--red);color:#7A1F1F}
+.alert.warning{background:var(--amber-light);border-color:var(--amber);color:#7A4A0A}
+.alert.success{background:var(--green-light);border-color:var(--green);color:#0D5A42}
+.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px}
+
+/* SQUAD TABLE */
+.squad-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.squad-row:last-child{border-bottom:none}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.av-g{background:#D0EEE4;color:#0D5A42}
+.av-a{background:#FEE8C5;color:#7A4A0A}
+.av-r{background:#FDDEDC;color:#7A1F1F}
+.player-info{flex:1;min-width:0}
+.player-name{font-size:14px;font-weight:500;color:var(--text)}
+.player-pos{font-size:12px;color:var(--text3)}
+.bar-wrap{width:64px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;flex-shrink:0}
+.bar-fill{height:100%;border-radius:3px}
+.risk-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;flex-shrink:0;letter-spacing:0.02em}
+.rp-low{background:#D0EEE4;color:#0D5A42}
+.rp-med{background:#FEE8C5;color:#7A4A0A}
+.rp-high{background:#FDDEDC;color:#7A1F1F}
+
+/* FORM */
+.form-section{margin-bottom:20px}
+.form-label{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block}
+.form-input{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--font-body);font-size:14px;color:var(--text);background:var(--bg);transition:border-color 0.15s;outline:none}
+.form-input:focus{border-color:var(--green);background:#fff}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type=range]{flex:1;accent-color:var(--green);height:4px;cursor:pointer}
+.slider-val{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--green);min-width:28px;text-align:right}
+.slider-hints{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:3px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:12px;font-family:var(--font-body);font-size:14px;font-weight:600;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover:not(:disabled){background:#18B882;transform:translateY(-1px);box-shadow:0 4px 16px rgba(29,158,117,0.35)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-secondary{width:100%;padding:11px;font-family:var(--font-body);font-size:13px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all 0.15s;margin-top:8px}
+.btn-secondary:hover{background:var(--card);color:var(--text)}
+
+/* AI OUTPUT */
+.ai-card{background:linear-gradient(135deg,var(--green-light) 0%,#F0FAF6 100%);border:1px solid var(--green-mid);border-radius:var(--radius-lg);padding:20px;margin-top:16px}
+.ai-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--green-mid)}
+.readiness-score{font-family:var(--font-display);font-size:40px;font-weight:800;color:var(--green-dark);line-height:1}
+.readiness-label{font-size:12px;color:var(--green-dark);opacity:0.7}
+.ai-text{font-size:14px;color:#1A3A30;line-height:1.7}
+.ai-loading{color:var(--text3);font-style:italic;font-size:14px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--green-mid);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FOW */
+.fow-step{display:flex;gap:14px;margin-bottom:20px}
+.fow-num{width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;font-family:var(--font-display);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.fow-content{flex:1}
+.fow-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.fow-desc{font-size:13px;color:var(--text2);line-height:1.6}
+.fow-connector{width:1px;height:16px;background:var(--border2);margin-left:15px}
+.problem-quote{background:linear-gradient(135deg,#1A1A18,#2A2A26);border-radius:var(--radius);padding:20px 22px;margin:16px 0}
+.problem-quote blockquote{font-size:15px;color:rgba(255,255,255,0.85);line-height:1.7;font-style:italic;margin-bottom:10px}
+.problem-quote cite{font-size:12px;color:var(--green);font-style:normal;font-weight:500}
+
+/* API KEY */
+.apikey-wrap{background:var(--amber-light);border:1px solid #F0D090;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px}
+.apikey-wrap label{font-size:12px;font-weight:600;color:var(--amber);display:block;margin-bottom:6px}
+.apikey-input-row{display:flex;gap:8px}
+.apikey-input-row input{flex:1;border:1px solid #E8C070;border-radius:var(--radius-sm);padding:8px 10px;font-family:'Courier New',monospace;font-size:12px;background:#FFFDF5;color:var(--text)}
+.apikey-save{padding:8px 14px;font-size:12px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap}
+.apikey-note{font-size:11px;color:#7A4A0A;margin-top:6px}
+
+/* SECTION HD */
+.section-hd{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin:24px 0 10px}
+
+/* PITCH TABLE */
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{background:var(--green);color:#fff;font-weight:600;padding:10px 12px;text-align:left;font-size:12px}
+.ptable td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.ptable tr:last-child td{border-bottom:none}
+.ptable tr:nth-child(even) td{background:#FAFAF7}
+.check{color:var(--green);font-weight:700}
+.cross{color:var(--red)}
+
+/* FOOTER */
+footer{text-align:center;padding:32px 16px;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--card);margin-top:0}
+footer strong{color:var(--green)}
+
+/* ANIMATIONS */
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="8.5" stroke="white" stroke-width="1.4"/>
+        <path d="M10 2.5 C10 2.5 13 6 13 10 C13 14 10 17.5 10 17.5 C10 17.5 7 14 7 10 C7 6 10 2.5 10 2.5Z" fill="white" opacity="0.5"/>
+        <path d="M2.5 10 C2.5 10 6 13 10 13 C14 13 17.5 10 17.5 10 C17.5 10 14 7 10 7 C6 7 2.5 10 2.5 10Z" fill="white" opacity="0.5"/>
+      </svg>
+    </div>
+    <span class="nav-title">Athle<span>Shield</span> AI</span>
+  </div>
+  <span class="nav-badge">⚡ Live AI Demo</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">Football Injury Intelligence</div>
+  <h1>Protect Your Squad.<br/><span>Before It's Too Late.</span></h1>
+  <p>Real-time AI-driven training load management for grassroots football teams. Built for coaches who care about every player.</p>
+  <button class="hero-cta" onclick="switchTab('player')">Try the AI Physio →</button>
+</div>
+
+<div class="tabs-wrap">
+  <button class="tab-btn active" onclick="switchTab('coach')">⚽ Coach Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('player')">📋 Player Log</button>
+  <button class="tab-btn" onclick="switchTab('fow')">🔄 How It Works</button>
+  <button class="tab-btn" onclick="switchTab('pitch')">📊 Problem & Pitch</button>
+</div>
+
+<div class="main">
+
+  <!-- COACH DASHBOARD -->
+  <div id="pane-coach" class="pane active fade-in">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Squad size</div><div class="stat-value">18</div><div class="stat-sub">active players</div></div>
+      <div class="stat-card"><div class="stat-label">High risk today</div><div class="stat-value red">3</div><div class="stat-sub">need load reduction</div></div>
+      <div class="stat-card"><div class="stat-label">Avg readiness</div><div class="stat-value">6.4<span style="font-size:16px;color:var(--text3)">/10</span></div><div class="stat-sub">across squad</div></div>
+      <div class="stat-card"><div class="stat-label">Injuries this month</div><div class="stat-value green">0</div><div class="stat-sub">vs 2 last month</div></div>
+    </div>
+
+    <div class="alert danger"><span class="alert-icon">🔴</span><div><strong>Rahul Desai (CM)</strong> — 3-day cumulative RPE spike detected. Hamstring strain risk elevated. Recommend 40% load reduction today and no sprint drills.</div></div>
+    <div class="alert warning"><span class="alert-icon">🟡</span><div><strong>Priya Nair (LW)</strong> — 5.5 hrs sleep logged. Reaction time & sprint capacity likely impaired. Consider rest or light technical work only.</div></div>
+    <div class="alert success"><span class="alert-icon">🟢</span><div><strong>Arjun Mehta (ST)</strong> — Readiness score 8.2/10. Peak performance window. Excellent day for high-intensity finishing drills.</div></div>
+
+    <div class="card">
+      <div class="card-title">Squad Readiness — Today</div>
+      <div class="squad-row">
+        <div class="avatar av-r">RD</div>
+        <div class="player-info"><div class="player-name">Rahul Desai</div><div class="player-pos">Central Midfielder</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:28%;background:#C0392B"></div></div>
+        <span class="risk-pill rp-high">High Risk</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-r">PN</div>
+        <div class="player-info"><div class="player-name">Priya Nair</div><div class="player-pos">Left Winger</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:33%;background:#C0392B"></div></div>
+        <span class="risk-pill rp-high">High Risk</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-r">KP</div>
+        <div class="player-info"><div class="player-name">Kiran Patil</div><div class="player-pos">Right Back</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:38%;background:#C97A1A"></div></div>
+        <span class="risk-pill rp-high">High Risk</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-a">SK</div>
+        <div class="player-info"><div class="player-name">Siddharth Kumar</div><div class="player-pos">Centre Back</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:55%;background:#C97A1A"></div></div>
+        <span class="risk-pill rp-med">Medium Risk</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-a">NV</div>
+        <div class="player-info"><div class="player-name">Neha Varma</div><div class="player-pos">Central Midfielder</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:60%;background:#C97A1A"></div></div>
+        <span class="risk-pill rp-med">Medium Risk</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-g">AM</div>
+        <div class="player-info"><div class="player-name">Arjun Mehta</div><div class="player-pos">Striker</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:82%;background:#1D9E75"></div></div>
+        <span class="risk-pill rp-low">Ready</span>
+      </div>
+      <div class="squad-row">
+        <div class="avatar av-g">VR</div>
+        <div class="player-info"><div class="player-name">Vivaan Rao</div><div class="player-pos">Goalkeeper</div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:76%;background:#1D9E75"></div></div>
+        <span class="risk-pill rp-low">Ready</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="switchTab('player')">+ Log New Player Wellness →</button>
+  </div>
+
+  <!-- PLAYER LOG -->
+  <div id="pane-player" class="pane">
+    <div class="apikey-wrap">
+      <label>🔑 Anthropic API Key (required for live AI analysis)</label>
+      <div class="apikey-input-row">
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
+        <button class="apikey-save" onclick="saveApiKey()">Save</button>
+      </div>
+      <div class="apikey-note">Your key is stored only in your browser session. Never shared. Get yours at console.anthropic.com</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Daily Wellness Log</div>
+      <div class="form-grid">
+        <div class="form-section">
+          <label class="form-label">Player name</label>
+          <input class="form-input" type="text" id="p-name" placeholder="e.g. Rahul Desai" value="Rahul Desai"/>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Position</label>
+          <select class="form-input" id="p-pos">
+            <option>Striker</option>
+            <option selected>Central Midfielder</option>
+            <option>Left / Right Winger</option>
+            <option>Centre Back</option>
+            <option>Full Back</option>
+            <option>Goalkeeper</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Sleep last night (hours)</label>
+        <div class="slider-row">
+          <input type="range" min="3" max="10" step="0.5" value="6" id="sl-sleep" oninput="document.getElementById('out-sleep').textContent=this.value"/>
+          <span class="slider-val" id="out-sleep">6</span>
+        </div>
+        <div class="slider-hints"><span>3 hrs (poor)</span><span>10 hrs (excellent)</span></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">RPE — yesterday's session (Rate of Perceived Exertion)</label>
+        <div class="slider-row">
+          <input type="range" min="1" max="10" step="1" value="8" id="sl-rpe" oninput="document.getElementById('out-rpe').textContent=this.value"/>
+          <span class="slider-val" id="out-rpe">8</span>
+        </div>
+        <div class="slider-hints"><span>1 (very easy)</span><span>10 (max effort)</span></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Muscle soreness level</label>
+        <div class="slider-row">
+          <input type="range" min="1" max="10" step="1" value="7" id="sl-sore" oninput="document.getElementById('out-sore').textContent=this.value"/>
+          <span class="slider-val" id="out-sore">7</span>
+        </div>
+        <div class="slider-hints"><span>1 (none)</span><span>10 (severe)</span></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Mental fatigue / stress level</label>
+        <div class="slider-row">
+          <input type="range" min="1" max="10" step="1" value="6" id="sl-mental" oninput="document.getElementById('out-mental').textContent=this.value"/>
+          <span class="slider-val" id="out-mental">6</span>
+        </div>
+        <div class="slider-hints"><span>1 (very fresh)</span><span>10 (exhausted)</span></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">High-load training days this week</label>
+        <div class="slider-row">
+          <input type="range" min="0" max="7" step="1" value="4" id="sl-days" oninput="document.getElementById('out-days').textContent=this.value"/>
+          <span class="slider-val" id="out-days">4</span>
+        </div>
+        <div class="slider-hints"><span>0 days</span><span>7 days</span></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Any pain or discomfort? (describe or write "none")</label>
+        <input class="form-input" type="text" id="p-pain" placeholder='e.g. "tight left hamstring" or "none"' value="tight left hamstring"/>
+      </div>
+
+      <button class="btn-primary" id="analyze-btn" onclick="runAnalysis()">
+        <span id="btn-text">Analyse with AI Physio</span>
+        <span id="btn-spinner" style="display:none"><span class="spinner"></span></span>
+      </button>
+    </div>
+
+    <div id="ai-result-wrap" style="display:none" class="fade-in">
+      <div class="section-hd">AI Physiologist Report</div>
+      <div class="ai-card">
+        <div class="ai-header">
+          <div>
+            <div class="readiness-score"><span id="score-num">—</span><span style="font-size:20px;color:var(--green-dark);opacity:0.6">/10</span></div>
+            <div class="readiness-label">Readiness Score</div>
+          </div>
+          <span id="risk-pill" class="risk-pill" style="margin-left:auto"></span>
+        </div>
+        <div class="ai-text" id="ai-out">Waiting for analysis...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW OF WORK -->
+  <div id="pane-fow" class="pane">
+    <div class="card">
+      <div class="card-title">How AthleShield AI Works</div>
+
+      <div class="fow-step">
+        <div class="fow-num">1</div>
+        <div class="fow-content">
+          <div class="fow-title">Player logs daily wellness (60 seconds)</div>
+          <div class="fow-desc">Each player logs 6 metrics every morning — sleep hours, RPE from yesterday's session, muscle soreness, mental fatigue, training load days, and any pain. No app install needed. Works via mobile web or WhatsApp bot.</div>
+        </div>
+      </div>
+      <div class="fow-connector"></div>
+      <div class="fow-step">
+        <div class="fow-num">2</div>
+        <div class="fow-content">
+          <div class="fow-title">Data stored in Firebase</div>
+          <div class="fow-desc">Logs are timestamped and stored securely in Firebase Firestore under each player's ID. A 7-day rolling history is maintained per player — this is what enables trend detection, not just point-in-time snapshots.</div>
+        </div>
+      </div>
+      <div class="fow-connector"></div>
+      <div class="fow-step">
+        <div class="fow-num">3</div>
+        <div class="fow-content">
+          <div class="fow-title">AI physiologist analyses the data</div>
+          <div class="fow-desc">A Firebase function triggers on each new log. It assembles the player's 7-day history + today's metrics + their position into a structured prompt sent to the Claude API. The AI acts as a certified sports physiologist — detecting acute:chronic workload spikes, position-specific injury risks, and fatigue compounding.</div>
+        </div>
+      </div>
+      <div class="fow-connector"></div>
+      <div class="fow-step">
+        <div class="fow-num">4</div>
+        <div class="fow-content">
+          <div class="fow-title">Coach sees squad readiness dashboard</div>
+          <div class="fow-desc">Before every session, the coach opens the dashboard. Red = reduce load significantly. Amber = monitor closely. Green = full intensity. Each flagged player shows the AI's specific recommendation — e.g. "40% load, avoid sprints, hamstring at risk."</div>
+        </div>
+      </div>
+      <div class="fow-connector"></div>
+      <div class="fow-step">
+        <div class="fow-num">5</div>
+        <div class="fow-content">
+          <div class="fow-title">AI-generated training plan (one tap)</div>
+          <div class="fow-desc">The coach taps "Generate today's plan." The AI produces a full position-specific session plan with individual modifications for every red and amber player. The coach runs the session backed by data — not gut feeling.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Technology Stack</div>
+      <table class="ptable">
+        <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>AI Engine</strong></td><td>Claude API</td><td>Sports physiologist reasoning & injury prediction</td></tr>
+          <tr><td><strong>Backend</strong></td><td>Firebase Firestore + Functions</td><td>Secure storage, 7-day history, API trigger</td></tr>
+          <tr><td><strong>Auth</strong></td><td>Firebase Auth</td><td>Team-scoped access control</td></tr>
+          <tr><td><strong>Frontend</strong></td><td>React + Tailwind CSS</td><td>Coach dashboard + Player log, mobile-first</td></tr>
+          <tr><td><strong>Input</strong></td><td>Web form / WhatsApp Bot</td><td>Zero friction daily logging</td></tr>
+          <tr><td><strong>Hosting</strong></td><td>Firebase Hosting / Vercel</td><td>Global CDN, HTTPS, fast loads</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROBLEM & PITCH -->
+  <div id="pane-pitch" class="pane">
+    <div class="card">
+      <div class="card-title">The Problem — Ground Truth</div>
+      <div class="problem-quote">
+        <blockquote>"I have 22 players. I know when someone looks tired, but I don't know if they're about to get injured. I've lost 3 players to hamstring pulls this season alone."</blockquote>
+        <cite>— Grassroots football coach, Pune (user research interview)</cite>
+      </div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:12px">Grassroots football coaches across India manage squads of 15–25 players with <strong>zero structured fatigue monitoring</strong>. Every decision on who trains hard, who rests, and who is injury-prone is made on pure gut feeling.</p>
+      <div class="alert danger"><span class="alert-icon">📊</span><div><strong>70% of football training injuries are load-related and preventable</strong> — FIFA Sports Medicine Research, 2023</div></div>
+      <div class="alert warning"><span class="alert-icon">💰</span><div><strong>Existing tools (Catapult, Whoop) cost ₹5–15 lakh/year</strong> — completely unaffordable for grassroots clubs</div></div>
+      <div class="alert success"><span class="alert-icon">🎯</span><div><strong>India has 1.2 million registered grassroots football players</strong> — none have access to affordable injury prevention science</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Excel vs AthleShield AI — The Judge Question</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;font-style:italic">"How is this different from a simple Excel sheet?"</p>
+      <table class="ptable">
+        <thead><tr><th>Capability</th><th>Excel</th><th>AthleShield AI</th></tr></thead>
+        <tbody>
+          <tr><td>Store player data</td><td class="check">✓ Yes</td><td class="check">✓ Yes</td></tr>
+          <tr><td>7-day trend detection</td><td>Manual formula only</td><td class="check">✓ Automatic & intelligent</td></tr>
+          <tr><td>Position-specific injury risk</td><td class="cross">✗ No</td><td class="check">✓ Built into AI</td></tr>
+          <tr><td>Natural language coach output</td><td class="cross">✗ No</td><td class="check">✓ Yes</td></tr>
+          <tr><td>Acute:chronic workload detection</td><td class="cross">✗ No</td><td class="check">✓ Yes</td></tr>
+          <tr><td>Training plan generation</td><td class="cross">✗ No</td><td class="check">✓ One tap</td></tr>
+          <tr><td>Works on a phone mid-session</td><td class="cross">✗ Barely</td><td class="check">✓ Mobile-first</td></tr>
+          <tr><td>Squad-level overview for coach</td><td class="cross">✗ No</td><td class="check">✓ Real-time dashboard</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px;padding:14px 16px;background:var(--green-light);border-radius:var(--radius-sm);border-left:3px solid var(--green)">
+        <p style="font-size:14px;font-weight:600;color:var(--green-dark);font-style:italic">"Excel tracks yesterday. AthleShield predicts tomorrow."</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pitch Deck Structure (7 Slides)</div>
+      <table class="ptable">
+        <thead><tr><th>#</th><th>Slide</th><th>Key message</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>The Hook</strong></td><td>"Every year, 3 players per grassroots team get injured needlessly."</td></tr>
+          <tr><td>2</td><td><strong>The Problem</strong></td><td>Coach persona + gap table. Make it feel real.</td></tr>
+          <tr><td>3</td><td><strong>Our Solution</strong></td><td>One sentence. 3-step diagram. No jargon.</td></tr>
+          <tr><td>4</td><td><strong>Live Demo</strong></td><td>Player logs → AI fires → Coach acts. 3 minutes live.</td></tr>
+          <tr><td>5</td><td><strong>Why Now, Why Us</strong></td><td>Claude API made this possible today. We orchestrated AI.</td></tr>
+          <tr><td>6</td><td><strong>Market Size</strong></td><td>1.2M grassroots players. Zero affordable tools. Expand to cricket, kabaddi.</td></tr>
+          <tr><td>7</td><td><strong>Close</strong></td><td>"Democratising sports science for every grassroots team."</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>AthleShield AI</strong> — Built for the Sports Hackathon 2025 &nbsp;·&nbsp; Powered by Claude API &nbsp;·&nbsp; Firebase + React
+</footer>
+
+<script>
+var API_KEY = '';
+
+function saveApiKey(){
+  var v = document.getElementById('api-key-input').value.trim();
+  if(!v){alert('Please enter your API key.');return;}
+  API_KEY = v;
+  var wrap = document.querySelector('.apikey-wrap');
+  wrap.style.background='#E1F5EE';wrap.style.borderColor='#A0D8C4';
+  wrap.querySelector('label').textContent = '✅ API Key saved — ready for live analysis';
+  wrap.querySelector('label').style.color='var(--green-dark)';
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active')});
+  var map={coach:0,player:1,fow:2,pitch:3};
+  document.querySelectorAll('.tab-btn')[map[t]].classList.add('active');
+  var pane = document.getElementById('pane-'+t);
+  pane.classList.add('active');
+  pane.classList.remove('fade-in');
+  void pane.offsetWidth;
+  pane.classList.add('fade-in');
+}
+
+async function runAnalysis(){
+  if(!API_KEY){
+    alert('Please enter and save your Anthropic API key first (shown above the form).');
+    document.getElementById('api-key-input').focus();
+    return;
+  }
+  var btn=document.getElementById('analyze-btn');
+  btn.disabled=true;
+  document.getElementById('btn-text').textContent='Analysing...';
+  document.getElementById('btn-spinner').style.display='inline-block';
+  document.getElementById('ai-result-wrap').style.display='block';
+  var out=document.getElementById('ai-out');
+  out.innerHTML='<span style="color:var(--text3);font-style:italic">The AI physiologist is reviewing your metrics...</span>';
+
+  var name=document.getElementById('p-name').value||'Player';
+  var pos=document.getElementById('p-pos').value;
+  var sleep=document.getElementById('sl-sleep').value;
+  var rpe=document.getElementById('sl-rpe').value;
+  var sore=document.getElementById('sl-sore').value;
+  var mental=document.getElementById('sl-mental').value;
+  var days=document.getElementById('sl-days').value;
+  var pain=document.getElementById('p-pain').value||'none';
+
+  var prompt="You are a certified sports physiologist with 15 years of experience in football injury prevention for grassroots and semi-professional teams. You specialise in the acute:chronic workload ratio (ACWR) method and position-specific injury risk profiling.\n\nAnalyse this player's daily wellness log:\n\nPlayer: "+name+"\nPosition: "+pos+"\nSleep last night: "+sleep+" hours\nYesterday's RPE: "+rpe+"/10\nMuscle soreness: "+sore+"/10\nMental fatigue: "+mental+"/10\nHigh-load training days this week: "+days+" days\nReported pain/discomfort: "+pain+"\n\nPosition-specific injury mapping to apply:\n- Striker/Winger: hamstring, groin (sprint-dominant)\n- Central Midfielder: hip flexor, knee (high volume running)\n- Defender: knee, ankle (contact + aerial)\n- Goalkeeper: shoulder, lower back\n\nDetect cumulative fatigue: if RPE 7+ for 3+ days, flag as high-risk even if today's individual metrics look moderate. Sleep below 6 hours = +30% injury risk multiplier. Mental fatigue above 7 = CNS fatigue indicator.\n\nRespond with exactly:\n1. First line: 'Readiness: X/10' (and nothing else on that line)\n2. 'Injury risk: Low/Medium/High'\n3. Specific injury risk — body part and reason (1 sentence)\n4. Today's training recommendation (e.g. 50% load, rest, full intensity)\n5. One specific drill modification or recovery protocol\n\nBe concise (under 130 words). Sound like a professional, not a chatbot. Be specific, not vague.";
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    });
+    var data=await resp.json();
+    if(data.error){throw new Error(data.error.message);}
+    var text=data.content[0].text;
+    out.textContent=text;
+    var scoreMatch=text.match(/Readiness:\s*(\d+(?:\.\d+)?)/i);
+    if(scoreMatch){document.getElementById('score-num').textContent=parseFloat(scoreMatch[1]).toFixed(1);}
+    var riskMatch=text.match(/Injury risk:\s*(Low|Medium|High)/i);
+    var riskLevel=riskMatch?riskMatch[1]:'Medium';
+    var pill=document.getElementById('risk-pill');
+    pill.textContent=riskLevel+' Risk';
+    pill.className='risk-pill '+(riskLevel==='High'?'rp-high':riskLevel==='Medium'?'rp-med':'rp-low');
+  }catch(e){
+    out.textContent='API error: '+e.message+'. Please check your API key is correct and has credits. Get your key at console.anthropic.com';
+    out.style.color='var(--red)';
+  }
+  btn.disabled=false;
+  document.getElementById('btn-text').textContent='Analyse with AI Physio';
+  document.getElementById('btn-spinner').style.display='none';
+}
+</script>
+</body>
+</html>
